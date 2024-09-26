@@ -79,12 +79,12 @@ func (c *Core) processRequests(numWorkers int) {
 
 func (c *Core) processTTLs() {
 	for {
+		c.mu.Lock()
 		lenSortedExpKey := len(c.sortedKeyExpiration)
 		if lenSortedExpKey == 0 {
 			time.Sleep(time.Second)
 			continue
 		}
-		c.mu.Lock()
 		firstKeyExpiration := c.sortedKeyExpiration[lenSortedExpKey-1]
 		if firstKeyExpiration.Exp > time.Now().Unix() {
 			c.mu.Unlock()
