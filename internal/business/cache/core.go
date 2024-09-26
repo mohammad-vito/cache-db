@@ -11,7 +11,6 @@ type Core struct {
 	data                map[string]interface{}
 	sortedKeyExpiration []ExpirationData
 	mu                  sync.RWMutex
-	processingCh        chan any
 
 	SetCh    chan SetCacheReq
 	GetCh    chan GetValueReq
@@ -24,23 +23,21 @@ func NewCore(logger *zap.SugaredLogger, numWrkrs int) *Core {
 		data:                make(map[string]interface{}),
 		sortedKeyExpiration: []ExpirationData{},
 		mu:                  sync.RWMutex{},
-		processingCh:        make(chan interface{}, 100),
 
 		SetCh:    make(chan SetCacheReq, 100),
 		GetCh:    make(chan GetValueReq, 100),
 		DeleteCh: make(chan DeleteValueReq, 100),
 	}
-	go core.synchronizeRequests()
 	go core.processTTLs()
 	go core.processRequests(numWrkrs)
 	return &core
 }
 
-func (c *Core) set(key string, val interface{}, ttl int64) {
+func (c *Core) set(key string, val interface{}, expUnix int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.data[key] = val
-	expData := ExpirationData{Key: key, Exp: ttl}
+	expData := ExpirationData{Key: key, Exp: expUnix}
 
 	sortedKeyExpInd := findExpDataInsertingIndex(c.sortedKeyExpiration, expData)
 	c.sortedKeyExpiration = append(c.sortedKeyExpiration[:sortedKeyExpInd], append([]ExpirationData{expData}, c.sortedKeyExpiration[sortedKeyExpInd:]...)...)
@@ -60,64 +57,24 @@ func (c *Core) delete(key string) {
 	delete(c.data, key)
 }
 
-func (c *Core) synchronizeRequests() {
-	for {
-		var req interface{}
-		var ok bool
-
-		select {
-		case req, ok = <-c.SetCh:
-		case req, ok = <-c.GetCh:
-		case req, ok = <-c.DeleteCh:
-		}
-		if !ok {
-			continue
-		}
-		c.processingCh <- req
-	}
-}
-
-func (c *Core) processRequests(numWrkrs int) {
-	var wg sync.WaitGroup
-	for i := 0; i < numWrkrs; i++ {
-		wg.Add(1)
+func (c *Core) processRequests(numWorkers int) {
+	for i := 0; i < numWorkers; i++ {
 		go func() {
-			defer wg.Done()
-			for req := range c.processingCh {
-				c.processRequest(req)
+			for {
+				select {
+				case req := <-c.SetCh:
+					c.set(req.Name, req.Value, req.Expiration)
+					req.DoneCh <- struct{}{}
+				case req := <-c.GetCh:
+					req.RespCh <- c.get(req.Key)
+				case req := <-c.DeleteCh:
+					c.delete(req.Key)
+					req.DoneCh <- struct{}{}
+				}
 			}
 		}()
 	}
-	wg.Wait()
-}
 
-func (c *Core) processRequest(req any) {
-	switch v := req.(type) {
-	case SetCacheReq:
-		select {
-		case <-v.Ctx.Done():
-			return
-		default:
-		}
-		c.set(v.Name, v.Value, v.Expiration)
-		v.DoneCh <- struct{}{}
-
-	case DeleteValueReq:
-		select {
-		case <-v.Ctx.Done():
-			return
-		default:
-		}
-		c.delete(v.Key)
-		v.DoneCh <- struct{}{}
-	case GetValueReq:
-		select {
-		case <-v.Ctx.Done():
-			return
-		default:
-		}
-		v.RespCh <- c.get(v.Key)
-	}
 }
 
 func (c *Core) processTTLs() {
