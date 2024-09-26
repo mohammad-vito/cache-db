@@ -13,8 +13,6 @@ RUN go mod vendor
 
 RUN go build main.go
 
-WORKDIR /service/cmd/worker
-RUN go build main.go
 
 FROM alpine:3.9
 RUN apk add libc6-compat

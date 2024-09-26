@@ -5,7 +5,9 @@ services:
     build: .
     ports:
       - ${API_PORT}:${API_PORT}
+    env_file:
+      - .env
 
     restart: unless-stopped
 
-    command: ["./cmd/rest-api/main"]
+    command: ["./rest-api/main"]
