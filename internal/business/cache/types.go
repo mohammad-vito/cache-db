@@ -21,3 +21,8 @@ type DeleteValueReq struct {
 	Key    string
 	DoneCh chan struct{}
 }
+
+type ExpirationData struct {
+	Key string
+	Exp int64
+}

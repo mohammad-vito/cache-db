@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-type ExpirationData struct {
-	Key string
-	Exp int64
-}
-
 type Core struct {
 	log                 *zap.SugaredLogger
 	data                map[string]interface{}
@@ -47,7 +42,7 @@ func (c *Core) set(key string, val interface{}, ttl int64) {
 	c.data[key] = val
 	expData := ExpirationData{Key: key, Exp: ttl}
 
-	sortedKeyExpInd := c.findExpDataIndex(c.sortedKeyExpiration, expData)
+	sortedKeyExpInd := findExpDataInsertingIndex(c.sortedKeyExpiration, expData)
 	c.sortedKeyExpiration = append(c.sortedKeyExpiration[:sortedKeyExpInd], append([]ExpirationData{expData}, c.sortedKeyExpiration[sortedKeyExpInd:]...)...)
 	c.log.Infow("set", "key", key, "value", val, "time", time.Now())
 }
@@ -147,7 +142,7 @@ func (c *Core) processTTLs() {
 	}
 }
 
-func (c *Core) findExpDataIndex(slice []ExpirationData, data ExpirationData) int {
+func findExpDataInsertingIndex(slice []ExpirationData, data ExpirationData) int {
 	low, high := 0, len(slice)-1
 
 	for low <= high {
