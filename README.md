@@ -10,3 +10,8 @@ Any optimization should be based on profiling and identifying bottlenecks. I hav
 
 Improvements:
 - If the system encounters excessive lock contention, we can shard the data map into multiple smaller maps, locking only the shard in use. 
+
+
+How to run the project:
+ 1. create a .env file based on .env.sample
+ 2. docker compose up
