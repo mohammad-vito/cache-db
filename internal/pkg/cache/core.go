@@ -82,6 +82,7 @@ func (c *Core) processTTLs() {
 		c.mu.Lock()
 		lenSortedExpKey := len(c.sortedKeyExpiration)
 		if lenSortedExpKey == 0 {
+			c.mu.Unlock()
 			time.Sleep(time.Second)
 			continue
 		}

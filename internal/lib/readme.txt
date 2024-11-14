@@ -1,0 +1,1 @@
+adapter packages must be here

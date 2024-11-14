@@ -5,8 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
-	"sn/internal/business/cache"
-	"sn/internal/server/handler/v1/schemata"
+	"sn/internal/pkg/cache"
+	"sn/internal/schemata"
 	"time"
 )
 
