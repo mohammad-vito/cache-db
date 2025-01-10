@@ -21,5 +21,4 @@ func GetIntConfig(key string) int {
 		panic(err)
 	}
 	return n
-
 }

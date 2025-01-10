@@ -11,8 +11,8 @@ type Service struct {
 	cache *Core
 }
 
-var ErrServerOverLoaded = errors.New("server over loaded please try in a few seconds")
 var ErrInvalidKey = errors.New("invalid key")
+var ErrCtxCancelled = errors.New("context cancelled")
 
 func NewService(c *Core, logger *zap.SugaredLogger) Service {
 	return Service{cache: c, log: logger}
@@ -30,9 +30,10 @@ func (s *Service) Set(ctx context.Context, key string, value interface{}, expira
 
 		<-doneCh
 		return nil
-	default:
+
+	case <-ctx.Done():
+		return ErrCtxCancelled
 	}
-	return ErrServerOverLoaded
 }
 
 func (s *Service) Get(ctx context.Context, key string) (interface{}, error) {
@@ -48,9 +49,10 @@ func (s *Service) Get(ctx context.Context, key string) (interface{}, error) {
 			return nil, ErrInvalidKey
 		}
 		return v, nil
-	default:
+
+	case <-ctx.Done():
+		return nil, ErrCtxCancelled
 	}
-	return nil, ErrServerOverLoaded
 }
 
 func (s *Service) Delete(ctx context.Context, name string) error {
@@ -64,6 +66,6 @@ func (s *Service) Delete(ctx context.Context, name string) error {
 		<-respCh
 		return nil
 	case <-ctx.Done():
+		return ErrCtxCancelled
 	}
-	return ErrServerOverLoaded
 }

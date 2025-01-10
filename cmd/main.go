@@ -36,9 +36,8 @@ func run(log *zap.SugaredLogger) error {
 	cacheCore := cache.NewCore(log)
 
 	cfg := handlers.Config{
-		Log:        log,
-		Cache:      cacheCore,
-		TimeoutSec: 10,
+		Log:   log,
+		Cache: cacheCore,
 	}
 
 	r := server.APIMux(&cfg)

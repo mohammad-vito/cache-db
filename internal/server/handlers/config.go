@@ -6,7 +6,6 @@ import (
 )
 
 type Config struct {
-	Log        *zap.SugaredLogger
-	Cache      *cache.Core
-	TimeoutSec int
+	Log   *zap.SugaredLogger
+	Cache *cache.Core
 }
