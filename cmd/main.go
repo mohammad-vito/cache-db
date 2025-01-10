@@ -14,7 +14,6 @@ import (
 	"sn/pkg/logger"
 	"syscall"
 	"time"
-	//"sn/internal/pkg/log"
 )
 
 func main() {
@@ -34,7 +33,7 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("starting service", "version", "1")
 	defer log.Infow("shutdown complete")
 
-	cacheCore := cache.NewCore(log, 10)
+	cacheCore := cache.NewCore(log)
 
 	cfg := handlers.Config{
 		Log:        log,
@@ -54,7 +53,6 @@ func run(log *zap.SugaredLogger) error {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
-
 	}()
 
 	shutdown := make(chan os.Signal, 1)
